@@ -1,0 +1,95 @@
+Tracking Permafrost Degradation using Synthetic Satellite Data and Machine Learning
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, r2_score
+
+# -----------------------
+# Step 1: Generate Synthetic Satellite Data
+# -----------------------
+def generate_synthetic_data(n_samples=1000, random_state=42):
+    np.random.seed(random_state)
+
+    # Simulate satellite-based variables
+    lst = np.random.normal(loc=5, scale=10, size=n_samples)  # Land Surface Temp (°C)
+    ndvi = np.clip(np.random.normal(loc=0.3, scale=0.1, size=n_samples), 0, 1)  # NDVI
+    soil_moisture = np.clip(np.random.normal(loc=0.25, scale=0.1, size=n_samples), 0, 1)
+
+    # Generate synthetic thaw depth (target)
+    thaw_depth = (
+        0.5 * lst -
+        1.2 * ndvi -
+        1.5 * soil_moisture +
+        np.random.normal(0, 1.5, n_samples)
+    )
+
+    return pd.DataFrame({
+        'LST': lst,
+        'NDVI': ndvi,
+        'Soil_Moisture': soil_moisture,
+        'Thaw_Depth': thaw_depth
+    })
+
+# Generate data
+data = generate_synthetic_data()
+print("Sample Data:\n", data.head())
+
+# -----------------------
+# Step 2: Visualize the Data
+# -----------------------
+def visualize_data(df):
+    sns.pairplot(df)
+    plt.suptitle("Synthetic Permafrost Monitoring Features", y=1.02)
+    plt.show()
+
+visualize_data(data)
+
+# -----------------------
+# Step 3: Train ML Model
+# -----------------------
+# Feature selection
+X = data[['LST', 'NDVI', 'Soil_Moisture']]
+y = data['Thaw_Depth']
+
+# Split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Model training
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+# -----------------------
+# Step 4: Evaluate the Model
+# -----------------------
+y_pred = model.predict(X_test)
+
+print("\nModel Evaluation:")
+print("R² Score:", r2_score(y_test, y_pred))
+print("RMSE:", np.sqrt(mean_squared_error(y_test, y_pred)))
+
+# True vs predicted plot
+plt.figure(figsize=(6, 6))
+plt.scatter(y_test, y_pred, alpha=0.7)
+plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], '--', color='red')
+plt.xlabel("Actual Thaw Depth")
+plt.ylabel("Predicted Thaw Depth")
+plt.title("Model Performance")
+plt.grid(True)
+plt.show()
+
+# -----------------------
+# Step 5: Feature Importance
+# -----------------------
+importances = model.feature_importances_
+feat_names = X.columns
+
+plt.figure(figsize=(6, 4))
+sns.barplot(x=importances, y=feat_names)
+plt.title("Feature Importances")
+plt.xlabel("Importance")
+plt.ylabel("Feature")
+plt.show()
