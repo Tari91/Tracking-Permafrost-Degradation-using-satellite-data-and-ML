@@ -29,9 +29,6 @@ Install the necessary libraries with:
 ```bash
 pip install numpy pandas matplotlib seaborn scikit-learn
 Run the script
-bash
-Copy
-Edit
 python permafrost_tracking_synthetic.py
 This will:
 
